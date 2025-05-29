@@ -18,7 +18,7 @@ import {
   DialogContent,
   DialogActions,
 } from '@mui/material';
-import { Delete as DeleteIcon } from '@mui/icons-material';
+import { Delete as DeleteIcon, Poll as PollIcon } from '@mui/icons-material';
 import { User } from '../types';
 
 const AdminPanel: React.FC = () => {
@@ -93,6 +93,10 @@ const AdminPanel: React.FC = () => {
     setUserToDelete(null);
   };
 
+  const handleSurveysClick = () => {
+    navigate('/admin/surveys');
+  };
+
   return (
     <Container component="main" maxWidth="lg">
       <Paper elevation={3} sx={{ p: 4, mt: 8 }}>
@@ -100,13 +104,24 @@ const AdminPanel: React.FC = () => {
           <Typography component="h1" variant="h4">
             Панель адміністратора
           </Typography>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleLogout}
-          >
-            Вийти
-          </Button>
+          <Box>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<PollIcon />}
+              onClick={handleSurveysClick}
+              sx={{ mr: 2 }}
+            >
+              Опитування
+            </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleLogout}
+            >
+              Вийти
+            </Button>
+          </Box>
         </Box>
 
         <Typography variant="h6" gutterBottom>

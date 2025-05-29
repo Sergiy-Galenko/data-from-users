@@ -11,6 +11,7 @@ import {
   CardContent,
 } from '@mui/material';
 import { User } from '../types';
+import { Poll as PollIcon } from '@mui/icons-material';
 
 const Dashboard: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -33,20 +34,39 @@ const Dashboard: React.FC = () => {
     navigate('/login');
   };
 
+  const handleSurveysClick = () => {
+    navigate('/surveys');
+  };
+
   if (!user) {
     return null;
   }
 
   return (
-    <Container component="main" maxWidth="md">
+    <Container component="main" maxWidth="lg">
       <Paper elevation={3} sx={{ p: 4, mt: 8 }}>
-        <Box sx={{ mb: 4 }}>
-          <Typography component="h1" variant="h4" gutterBottom>
+        <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography component="h1" variant="h4">
             Особистий кабінет
           </Typography>
-          <Typography variant="subtitle1" color="text.secondary" gutterBottom>
-            Ласкаво просимо, {user.name}!
-          </Typography>
+          <Box>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<PollIcon />}
+              onClick={handleSurveysClick}
+              sx={{ mr: 2 }}
+            >
+              Опитування
+            </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleLogout}
+            >
+              Вийти
+            </Button>
+          </Box>
         </Box>
 
         <Grid container spacing={3}>
@@ -86,16 +106,6 @@ const Dashboard: React.FC = () => {
             </Card>
           </Grid>
         </Grid>
-
-        <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end' }}>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleLogout}
-          >
-            Вийти
-          </Button>
-        </Box>
       </Paper>
     </Container>
   );
