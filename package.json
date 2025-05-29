@@ -29,6 +29,8 @@
   },
   "scripts": {
     "start": "react-scripts start",
+    "server": "node server.js",
+    "dev": "concurrently \"npm run server\" \"npm run start\"",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
@@ -64,6 +66,7 @@
     "url": "https://github.com/Sergiy-Galenko/data-from-users/issues"
   },
   "devDependencies": {
-    "@types/bonjour": "^3.5.13"
+    "@types/bonjour": "^3.5.13",
+    "concurrently": "^8.2.2"
   }
 }

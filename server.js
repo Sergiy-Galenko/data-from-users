@@ -12,6 +12,7 @@ app.use(bodyParser.json());
 
 const USERS_FILE = path.join(__dirname, 'src', 'data', 'users.json');
 const SURVEYS_FILE = path.join(__dirname, 'src', 'data', 'surveys.json');
+const SUGGESTIONS_FILE = path.join(__dirname, 'src', 'data', 'suggestions.json');
 
 // Функція для нормалізації номера телефону
 const normalizePhoneNumber = (phone) => {
@@ -51,6 +52,34 @@ const writeSurveysFile = (data) => {
   fs.writeFileSync(SURVEYS_FILE, JSON.stringify(data, null, 2));
 };
 
+// Функція для читання пропозицій
+const readSuggestionsFile = () => {
+  try {
+    const data = fs.readFileSync(SUGGESTIONS_FILE, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    // Якщо файл не існує, створюємо його з пустим масивом пропозицій
+    const initialData = { suggestions: [] };
+    writeSuggestionsFile(initialData);
+    return initialData;
+  }
+};
+
+// Функція для запису пропозицій
+const writeSuggestionsFile = (data) => {
+  try {
+    // Переконуємося, що директорія існує
+    const dir = path.dirname(SUGGESTIONS_FILE);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(SUGGESTIONS_FILE, JSON.stringify(data, null, 2));
+  } catch (error) {
+    console.error('Помилка при записі файлу пропозицій:', error);
+    throw error;
+  }
+};
+
 // Отримати всіх користувачів
 app.get('/api/users', (req, res) => {
   const data = readUsersFile();
@@ -60,7 +89,10 @@ app.get('/api/users', (req, res) => {
 // Додати нового користувача
 app.post('/api/users', (req, res) => {
   const data = readUsersFile();
-  const newUser = req.body;
+  const newUser = {
+    ...req.body,
+    id: Date.now().toString() // Генеруємо унікальний ID
+  };
   
   // Нормалізуємо номер телефону для порівняння
   const normalizedNewPhone = normalizePhoneNumber(newUser.phone);
@@ -180,6 +212,131 @@ app.post('/api/surveys/:id/responses', (req, res) => {
   
   writeSurveysFile(data);
   res.json(survey);
+});
+
+// Отримати всі пропозиції
+app.get('/api/suggestions', (req, res) => {
+  const data = readSuggestionsFile();
+  const userId = req.query.userId;
+
+  if (userId) {
+    // Фільтруємо пропозиції за userId, якщо він присутній у запиті
+    const userSuggestions = data.suggestions.filter(suggestion => suggestion.userId === userId);
+    res.json({ suggestions: userSuggestions });
+  } else {
+    // Якщо userId не вказано (наприклад, для адміна), повертаємо всі пропозиції
+    res.json(data);
+  }
+});
+
+// Створити нову пропозицію
+app.post('/api/suggestions', (req, res) => {
+  console.log('Отримано запит на створення пропозиції:', req.body);
+  console.log('Тип даних:', typeof req.body);
+  console.log('Вміст запиту:', JSON.stringify(req.body, null, 2));
+  
+  const data = readSuggestionsFile();
+  const newSuggestion = {
+    ...req.body,
+    id: Date.now().toString(),
+    createdAt: new Date().toISOString(),
+    status: 'pending'
+  };
+
+  console.log('Підготовлена пропозиція:', newSuggestion);
+  console.log('Перевірка полів:');
+  console.log('- content:', newSuggestion.content);
+  console.log('- priority:', newSuggestion.priority);
+  console.log('- userId:', newSuggestion.userId);
+
+  if (!newSuggestion.content || !newSuggestion.priority || !newSuggestion.userId) {
+    console.error('Некоректна структура пропозиції:', newSuggestion);
+    return res.status(400).json({ 
+      error: 'Некоректна структура пропозиції',
+      details: {
+        content: !!newSuggestion.content,
+        priority: !!newSuggestion.priority,
+        userId: !!newSuggestion.userId
+      }
+    });
+  }
+
+  try {
+    data.suggestions.push(newSuggestion);
+    writeSuggestionsFile(data);
+    console.log('Пропозицію успішно збережено');
+    res.json(newSuggestion);
+  } catch (error) {
+    console.error('Помилка при збереженні пропозиції:', error);
+    res.status(500).json({ error: 'Помилка при збереженні пропозиції' });
+  }
+});
+
+// Оновити статус пропозиції
+app.patch('/api/suggestions/:id', (req, res) => {
+  const data = readSuggestionsFile();
+  const suggestionId = req.params.id;
+  const { status } = req.body;
+
+  const suggestion = data.suggestions.find(s => s.id === suggestionId);
+  if (!suggestion) {
+    return res.status(404).json({ error: 'Пропозицію не знайдено' });
+  }
+
+  if (!['pending', 'in_progress', 'resolved'].includes(status)) {
+    return res.status(400).json({ error: 'Некоректний статус' });
+  }
+
+  suggestion.status = status;
+  writeSuggestionsFile(data);
+  res.json(suggestion);
+});
+
+// Видалити пропозицію
+app.delete('/api/suggestions/:id', (req, res) => {
+  const data = readSuggestionsFile();
+  const suggestionId = req.params.id;
+
+  const suggestionIndex = data.suggestions.findIndex(s => s.id === suggestionId);
+  if (suggestionIndex === -1) {
+    return res.status(404).json({ error: 'Пропозицію не знайдено' });
+  }
+
+  data.suggestions.splice(suggestionIndex, 1);
+  writeSuggestionsFile(data);
+  res.json({ message: 'Пропозицію успішно видалено' });
+});
+
+// Логін користувача
+app.post('/api/login', (req, res) => {
+  const { phone, password } = req.body;
+  const data = readUsersFile();
+
+  // Перевіряємо адміністратора
+  if (phone === data.admin.phone && password === data.admin.password) {
+    return res.json({
+      name: 'Admin',
+      phone: data.admin.phone,
+      isAdmin: true,
+      id: 'admin'
+    });
+  }
+
+  // Шукаємо користувача
+  const user = data.users.find(u => 
+    normalizePhoneNumber(u.phone) === normalizePhoneNumber(phone) && 
+    u.password === password
+  );
+
+  if (user) {
+    const { password: _, ...userWithoutPassword } = user;
+    return res.json({
+      ...userWithoutPassword,
+      isAdmin: false
+    });
+  }
+
+  res.status(401).json({ error: 'Невірний номер телефону або пароль' });
 });
 
 app.listen(PORT, () => {

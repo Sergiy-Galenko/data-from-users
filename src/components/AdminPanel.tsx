@@ -17,14 +17,20 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Tabs,
+  Tab,
 } from '@mui/material';
-import { Delete as DeleteIcon, Poll as PollIcon } from '@mui/icons-material';
+import { Delete as DeleteIcon, Poll as PollIcon, Lightbulb as LightbulbIcon } from '@mui/icons-material';
 import { User } from '../types';
+import { Suggestion } from '../types/Suggestion';
+import SuggestionList from './SuggestionList';
 
 const AdminPanel: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [activeTab, setActiveTab] = useState(0);
   const navigate = useNavigate();
 
   const fetchUsers = async () => {
@@ -35,6 +41,19 @@ const AdminPanel: React.FC = () => {
       }
       const data = await response.json();
       setUsers(data.users);
+    } catch (error) {
+      console.error('Помилка:', error);
+    }
+  };
+
+  const fetchSuggestions = async () => {
+    try {
+      const response = await fetch('http://localhost:3001/api/suggestions');
+      if (!response.ok) {
+        throw new Error('Помилка отримання пропозицій');
+      }
+      const data = await response.json();
+      setSuggestions(data.suggestions);
     } catch (error) {
       console.error('Помилка:', error);
     }
@@ -55,6 +74,7 @@ const AdminPanel: React.FC = () => {
     }
 
     fetchUsers();
+    fetchSuggestions();
   }, [navigate]);
 
   const handleLogout = () => {
@@ -79,7 +99,6 @@ const AdminPanel: React.FC = () => {
         throw new Error('Помилка видалення користувача');
       }
 
-      // Оновлюємо список користувачів
       await fetchUsers();
       setDeleteDialogOpen(false);
       setUserToDelete(null);
@@ -95,6 +114,30 @@ const AdminPanel: React.FC = () => {
 
   const handleSurveysClick = () => {
     navigate('/admin/surveys');
+  };
+
+  const handleSuggestionStatusChange = async (id: string, status: Suggestion['status']) => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/suggestions/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Помилка оновлення статусу');
+      }
+
+      await fetchSuggestions();
+    } catch (error) {
+      console.error('Помилка:', error);
+    }
+  };
+
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setActiveTab(newValue);
   };
 
   return (
@@ -124,49 +167,67 @@ const AdminPanel: React.FC = () => {
           </Box>
         </Box>
 
-        <Typography variant="h6" gutterBottom>
-          Список зареєстрованих користувачів
-        </Typography>
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+          <Tabs value={activeTab} onChange={handleTabChange}>
+            <Tab label="Користувачі" />
+            <Tab label="Пропозиції" />
+          </Tabs>
+        </Box>
 
-        <TableContainer component={Paper} sx={{ mt: 2 }}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Ім'я</TableCell>
-                <TableCell>Номер телефону</TableCell>
-                <TableCell>Номер квартири</TableCell>
-                <TableCell>Поверх</TableCell>
-                <TableCell align="right">Дії</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {users.map((user, index) => (
-                <TableRow key={index}>
-                  <TableCell>{user.name}</TableCell>
-                  <TableCell>{user.phone}</TableCell>
-                  <TableCell>{user.apartmentNumber}</TableCell>
-                  <TableCell>{user.floor}</TableCell>
-                  <TableCell align="right">
-                    <IconButton
-                      color="error"
-                      onClick={() => handleDeleteClick(user)}
-                      aria-label="видалити користувача"
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {users.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={5} align="center">
-                    Немає зареєстрованих користувачів
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        {activeTab === 0 && (
+          <>
+            <Typography variant="h6" gutterBottom>
+              Список зареєстрованих користувачів
+            </Typography>
+
+            <TableContainer component={Paper} sx={{ mt: 2 }}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Ім'я</TableCell>
+                    <TableCell>Номер телефону</TableCell>
+                    <TableCell>Номер квартири</TableCell>
+                    <TableCell>Поверх</TableCell>
+                    <TableCell align="right">Дії</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {users.map((user, index) => (
+                    <TableRow key={index}>
+                      <TableCell>{user.name}</TableCell>
+                      <TableCell>{user.phone}</TableCell>
+                      <TableCell>{user.apartmentNumber}</TableCell>
+                      <TableCell>{user.floor}</TableCell>
+                      <TableCell align="right">
+                        <IconButton
+                          color="error"
+                          onClick={() => handleDeleteClick(user)}
+                          aria-label="видалити користувача"
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {users.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} align="center">
+                        Немає зареєстрованих користувачів
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </>
+        )}
+
+        {activeTab === 1 && (
+          <SuggestionList
+            suggestions={suggestions}
+            onStatusChange={handleSuggestionStatusChange}
+          />
+        )}
       </Paper>
 
       {/* Діалог підтвердження видалення */}

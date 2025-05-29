@@ -5,6 +5,7 @@
   },
   "users": [
     {
+      "id": "1",
       "name": "Вася",
       "phone": "0987574733",
       "password": "qwerty",
