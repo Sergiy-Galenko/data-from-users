@@ -1,0 +1,22 @@
+{
+  "admin": {
+    "phone": "+380501234567",
+    "password": "admin123"
+  },
+  "users": [
+    {
+      "name": "Test",
+      "phone": "0999999999",
+      "password": "Test",
+      "apartmentNumber": "Test",
+      "floor": "Test"
+    },
+    {
+      "name": "Вася",
+      "phone": "0987574733",
+      "password": "qwerty",
+      "apartmentNumber": "1",
+      "floor": "1"
+    }
+  ]
+}
