@@ -66,6 +66,30 @@ app.post('/api/users', (req, res) => {
   res.json(newUser);
 });
 
+// Видалити користувача
+app.delete('/api/users/:phone', (req, res) => {
+  const data = readUsersFile();
+  const phoneToDelete = req.params.phone;
+  
+  // Нормалізуємо номер телефону для порівняння
+  const normalizedPhoneToDelete = normalizePhoneNumber(phoneToDelete);
+  
+  // Знаходимо індекс користувача для видалення
+  const userIndex = data.users.findIndex(user => 
+    normalizePhoneNumber(user.phone) === normalizedPhoneToDelete
+  );
+  
+  if (userIndex === -1) {
+    return res.status(404).json({ error: 'Користувача не знайдено' });
+  }
+  
+  // Видаляємо користувача
+  data.users.splice(userIndex, 1);
+  writeUsersFile(data);
+  
+  res.json({ message: 'Користувача успішно видалено' });
+});
+
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 }); 

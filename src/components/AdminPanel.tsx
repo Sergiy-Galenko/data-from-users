@@ -12,12 +12,33 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
+import { Delete as DeleteIcon } from '@mui/icons-material';
 import { User } from '../types';
 
 const AdminPanel: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const navigate = useNavigate();
+
+  const fetchUsers = async () => {
+    try {
+      const response = await fetch('http://localhost:3001/api/users');
+      if (!response.ok) {
+        throw new Error('Помилка отримання даних');
+      }
+      const data = await response.json();
+      setUsers(data.users);
+    } catch (error) {
+      console.error('Помилка:', error);
+    }
+  };
 
   useEffect(() => {
     // Перевіряємо, чи користувач є адміністратором
@@ -33,26 +54,43 @@ const AdminPanel: React.FC = () => {
       return;
     }
 
-    // Отримуємо список всіх користувачів з API
-    const fetchUsers = async () => {
-      try {
-        const response = await fetch('http://localhost:3001/api/users');
-        if (!response.ok) {
-          throw new Error('Помилка отримання даних');
-        }
-        const data = await response.json();
-        setUsers(data.users);
-      } catch (error) {
-        console.error('Помилка:', error);
-      }
-    };
-
     fetchUsers();
   }, [navigate]);
 
   const handleLogout = () => {
     localStorage.removeItem('currentUser');
     navigate('/login');
+  };
+
+  const handleDeleteClick = (user: User) => {
+    setUserToDelete(user);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!userToDelete) return;
+
+    try {
+      const response = await fetch(`http://localhost:3001/api/users/${userToDelete.phone}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Помилка видалення користувача');
+      }
+
+      // Оновлюємо список користувачів
+      await fetchUsers();
+      setDeleteDialogOpen(false);
+      setUserToDelete(null);
+    } catch (error) {
+      console.error('Помилка:', error);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setUserToDelete(null);
   };
 
   return (
@@ -83,6 +121,7 @@ const AdminPanel: React.FC = () => {
                 <TableCell>Номер телефону</TableCell>
                 <TableCell>Номер квартири</TableCell>
                 <TableCell>Поверх</TableCell>
+                <TableCell align="right">Дії</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -92,11 +131,20 @@ const AdminPanel: React.FC = () => {
                   <TableCell>{user.phone}</TableCell>
                   <TableCell>{user.apartmentNumber}</TableCell>
                   <TableCell>{user.floor}</TableCell>
+                  <TableCell align="right">
+                    <IconButton
+                      color="error"
+                      onClick={() => handleDeleteClick(user)}
+                      aria-label="видалити користувача"
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </TableCell>
                 </TableRow>
               ))}
               {users.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={4} align="center">
+                  <TableCell colSpan={5} align="center">
                     Немає зареєстрованих користувачів
                   </TableCell>
                 </TableRow>
@@ -105,6 +153,27 @@ const AdminPanel: React.FC = () => {
           </Table>
         </TableContainer>
       </Paper>
+
+      {/* Діалог підтвердження видалення */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleDeleteCancel}
+      >
+        <DialogTitle>Підтвердження видалення</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Ви впевнені, що хочете видалити користувача {userToDelete?.name}?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteCancel} color="primary">
+            Скасувати
+          </Button>
+          <Button onClick={handleDeleteConfirm} color="error" autoFocus>
+            Видалити
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };
