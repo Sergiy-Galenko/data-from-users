@@ -1,3 +1,35 @@
 {
-  "surveys": []
+  "surveys": [
+    {
+      "title": "test",
+      "description": "tets",
+      "questions": [
+        {
+          "text": "Test",
+          "options": [
+            "yes",
+            "no"
+          ]
+        }
+      ],
+      "id": "1748601075164",
+      "createdAt": "2025-05-30T10:31:15.164Z",
+      "responses": [
+        {
+          "surveyId": "1748601075164",
+          "userId": "0987574733",
+          "userName": "Вася",
+          "userPhone": "0987574733",
+          "answers": [
+            {
+              "questionIndex": 0,
+              "answer": "yes"
+            }
+          ],
+          "completedAt": "2025-05-30T10:33:04.635Z",
+          "createdAt": "2025-05-30T10:33:04.643Z"
+        }
+      ]
+    }
+  ]
 }

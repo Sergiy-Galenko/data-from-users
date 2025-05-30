@@ -19,6 +19,9 @@ import {
   Chip,
 } from '@mui/material';
 import { Delete as DeleteIcon, Add as AddIcon } from '@mui/icons-material';
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
+} from 'recharts';
 
 interface Question {
   text: string;
@@ -393,27 +396,66 @@ const Surveys: React.FC = () => {
           {selectedSurvey?.responses.length === 0 ? (
             <Typography>Поки немає відповідей на це опитування</Typography>
           ) : (
-            selectedSurvey?.responses.map((response, responseIndex) => (
-              <Box key={responseIndex} sx={{ mb: 3 }}>
-                <Typography variant="h6" gutterBottom>
-                  Відповідь від {response.userName} ({response.userPhone})
-                </Typography>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Завершено: {new Date(response.completedAt).toLocaleString()}
-                </Typography>
-                {response.answers.map((answer, answerIndex) => (
-                  <Box key={answerIndex} sx={{ mb: 1 }}>
-                    <Typography variant="body2">
-                      <strong>Питання {answerIndex + 1}:</strong> {selectedSurvey.questions[answer.questionIndex].text}
+            <>
+              {/* Графіки по кожному питанню */}
+              {selectedSurvey?.questions.map((question, qIdx) => {
+                // Підрахунок відповідей для кожного варіанту
+                const answerCounts: Record<string, number> = {};
+                question.options.forEach(option => {
+                  answerCounts[option] = 0;
+                });
+                selectedSurvey.responses.forEach(response => {
+                  const answerObj = response.answers.find(a => a.questionIndex === qIdx);
+                  if (answerObj && answerCounts.hasOwnProperty(answerObj.answer)) {
+                    answerCounts[answerObj.answer]++;
+                  }
+                });
+                // Формуємо дані для графіка
+                const chartData = question.options.map(option => ({
+                  name: option,
+                  Кількість: answerCounts[option] || 0,
+                }));
+                return (
+                  <Box key={qIdx} sx={{ mb: 4 }}>
+                    <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                      {`Питання ${qIdx + 1}: ${question.text}`}
                     </Typography>
-                    <Typography variant="body2" color="primary">
-                      Відповідь: {answer.answer}
-                    </Typography>
+                    <ResponsiveContainer width="100%" height={250}>
+                      <BarChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis allowDecimals={false} />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="Кількість" fill="#1976d2" />
+                      </BarChart>
+                    </ResponsiveContainer>
                   </Box>
-                ))}
-                <Divider sx={{ my: 2 }} />
-              </Box>
-            ))
+                );
+              })}
+              {/* Відповіді у вигляді списку */}
+              {selectedSurvey?.responses.map((response, responseIndex) => (
+                <Box key={responseIndex} sx={{ mb: 3 }}>
+                  <Typography variant="h6" gutterBottom>
+                    Відповідь від {response.userName} ({response.userPhone})
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Завершено: {new Date(response.completedAt).toLocaleString()}
+                  </Typography>
+                  {response.answers.map((answer, answerIndex) => (
+                    <Box key={answerIndex} sx={{ mb: 1 }}>
+                      <Typography variant="body2">
+                        <strong>Питання {answerIndex + 1}:</strong> {selectedSurvey.questions[answer.questionIndex].text}
+                      </Typography>
+                      <Typography variant="body2" color="primary">
+                        Відповідь: {answer.answer}
+                      </Typography>
+                    </Box>
+                  ))}
+                  <Divider sx={{ my: 2 }} />
+                </Box>
+              ))}
+            </>
           )}
         </DialogContent>
         <DialogActions>
