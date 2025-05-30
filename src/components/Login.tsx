@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { TextField, Button, Container, Typography, Box, Paper, IconButton, InputAdornment } from '@mui/material';
+import { TextField, Button, Container, Typography, Box, Paper, IconButton, InputAdornment, useTheme } from '@mui/material';
 import { PatternFormat } from 'react-number-format';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import usersData from '../data/users.json';
 import { User, UsersData } from '../types';
+import AnimatedPage from './AnimatedPage';
 
 const typedUsersData = usersData as UsersData;
 
@@ -21,6 +22,7 @@ const Login: React.FC = () => {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const theme = useTheme();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,75 +71,127 @@ const Login: React.FC = () => {
   };
 
   return (
-    <Container component="main" maxWidth="xs">
-      <Paper elevation={3} sx={{ p: 4, mt: 8 }}>
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
+    <AnimatedPage>
+      <Container component="main" maxWidth="xs">
+        <Paper 
+          elevation={3} 
+          sx={{ 
+            p: { xs: 2, sm: 4 }, 
+            mt: { xs: 4, sm: 8 },
+            borderRadius: 2,
+            transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
+            '&:hover': {
+              transform: 'translateY(-4px)',
+              boxShadow: theme.shadows[8],
+            },
           }}
         >
-          <Typography component="h1" variant="h5" gutterBottom>
-            Вхід
-          </Typography>
-          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, width: '100%' }}>
-            <PatternFormat
-              customInput={TextField}
-              format="+38 (###) ### ## ##"
-              mask="_"
-              margin="normal"
-              required
-              fullWidth
-              label="Номер телефону"
-              value={phone}
-              onValueChange={(values) => setPhone(values.value)}
-              autoFocus
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              label="Пароль"
-              type={showPassword ? 'text' : 'password'}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      aria-label="toggle password visibility"
-                      onClick={handleClickShowPassword}
-                      edge="end"
-                    >
-                      {showPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+            }}
+          >
+            <Typography 
+              component="h1" 
+              variant="h4" 
+              gutterBottom
+              sx={{
+                fontWeight: 600,
+                color: theme.palette.primary.main,
+                mb: 3,
               }}
-            />
-            {error && (
-              <Typography color="error" sx={{ mt: 1 }}>
-                {error}
-              </Typography>
-            )}
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              sx={{ mt: 3, mb: 2 }}
             >
-              Увійти
-            </Button>
-            <Link to="/register">
-              <Typography align="center" color="primary">
-                Немає облікового запису? Зареєструватися
-              </Typography>
-            </Link>
+              Вхід
+            </Typography>
+            <Box 
+              component="form" 
+              onSubmit={handleSubmit} 
+              sx={{ 
+                mt: 1, 
+                width: '100%',
+                '& .MuiTextField-root': {
+                  mb: 2,
+                },
+              }}
+            >
+              <PatternFormat
+                customInput={TextField}
+                format="+38 (###) ### ## ##"
+                mask="_"
+                required
+                fullWidth
+                label="Номер телефону"
+                value={phone}
+                onValueChange={(values) => setPhone(values.value)}
+                autoFocus
+                aria-label="Номер телефону"
+                error={!!error}
+                helperText={error && 'Перевірте правильність введення'}
+              />
+              <TextField
+                required
+                fullWidth
+                label="Пароль"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label={showPassword ? 'Приховати пароль' : 'Показати пароль'}
+                        onClick={handleClickShowPassword}
+                        edge="end"
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+                error={!!error}
+                helperText={error && 'Перевірте правильність введення'}
+              />
+              <Button
+                type="submit"
+                fullWidth
+                variant="contained"
+                size="large"
+                sx={{ 
+                  mt: 3, 
+                  mb: 2,
+                  py: 1.5,
+                  fontSize: '1.1rem',
+                  textTransform: 'none',
+                  borderRadius: 2,
+                  transition: 'transform 0.2s ease-in-out',
+                  '&:hover': {
+                    transform: 'scale(1.02)',
+                  },
+                }}
+              >
+                Увійти
+              </Button>
+              <Link to="/register" style={{ textDecoration: 'none' }}>
+                <Typography 
+                  align="center" 
+                  color="primary"
+                  sx={{
+                    transition: 'color 0.2s ease-in-out',
+                    '&:hover': {
+                      color: theme.palette.primary.dark,
+                    },
+                  }}
+                >
+                  Немає облікового запису? Зареєструватися
+                </Typography>
+              </Link>
+            </Box>
           </Box>
-        </Box>
-      </Paper>
-    </Container>
+        </Paper>
+      </Container>
+    </AnimatedPage>
   );
 };
 
